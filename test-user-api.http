@@ -1,0 +1,115 @@
+### 用户管理 API 测试
+
+### 1. 根据ID查询用户信息（无需登录）
+GET http://localhost:8080/api/user/1
+Content-Type: application/json
+
+### 2. 根据手机号查询用户信息（无需登录）
+GET http://localhost:8080/api/user/phone/13800138000
+Content-Type: application/json
+
+### 3. 修改用户信息 - 需要先登录获取token
+
+### 3.1 短信验证码登录（先获取token）
+POST http://localhost:8080/api/auth/login/sms
+Content-Type: application/json
+
+{
+  "phone": "13800138000",
+  "code": "123456"
+}
+
+### 3.2 修改用户名
+PUT http://localhost:8080/api/user
+Content-Type: application/json
+Authorization: Bearer YOUR_TOKEN_HERE
+
+{
+  "username": "新用户名"
+}
+
+### 3.3 修改密码
+PUT http://localhost:8080/api/user
+Content-Type: application/json
+Authorization: Bearer YOUR_TOKEN_HERE
+
+{
+  "password": "newPassword123"
+}
+
+### 3.4 修改邮箱
+PUT http://localhost:8080/api/user
+Content-Type: application/json
+Authorization: Bearer YOUR_TOKEN_HERE
+
+{
+  "email": "newemail@example.com"
+}
+
+### 3.5 同时修改多个字段
+PUT http://localhost:8080/api/user
+Content-Type: application/json
+Authorization: Bearer YOUR_TOKEN_HERE
+
+{
+  "username": "更新的用户名",
+  "password": "newPassword456",
+  "email": "updated@example.com"
+}
+
+### 4. 测试错误场景
+
+### 4.1 修改用户信息但未登录（应返回401）
+PUT http://localhost:8080/api/user
+Content-Type: application/json
+
+{
+  "username": "测试用户"
+}
+
+### 4.2 修改用户信息但未提供任何字段（应返回错误）
+PUT http://localhost:8080/api/user
+Content-Type: application/json
+Authorization: Bearer YOUR_TOKEN_HERE
+
+{
+}
+
+### 4.3 查询不存在的用户ID
+GET http://localhost:8080/api/user/99999
+Content-Type: application/json
+
+### 4.4 查询不存在的手机号
+GET http://localhost:8080/api/user/phone/99999999999
+Content-Type: application/json
+
+### 5. 头像上传测试
+
+### 5.1 上传头像（需要先登录获取token）
+POST http://localhost:8080/api/user/avatar
+Authorization: Bearer YOUR_TOKEN_HERE
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="file"; filename="avatar.jpg"
+Content-Type: image/jpeg
+
+< ./path/to/your/avatar.jpg
+--WebAppBoundary--
+
+### 5.2 上传头像但未登录（应返回401）
+POST http://localhost:8080/api/user/avatar
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="file"; filename="avatar.jpg"
+Content-Type: image/jpeg
+
+< ./path/to/your/avatar.jpg
+--WebAppBoundary--
+
+### 注意：
+### 1. 将 YOUR_TOKEN_HERE 替换为实际的JWT token
+### 2. 将 ./path/to/your/avatar.jpg 替换为实际的图片文件路径
+### 3. 支持的图片格式：jpg, jpeg, png, gif
+### 4. 文件大小限制：5MB
