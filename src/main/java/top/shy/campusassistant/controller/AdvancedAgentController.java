@@ -1,6 +1,7 @@
 package top.shy.campusassistant.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 
@@ -39,7 +40,7 @@ public class AdvancedAgentController {
     }
 
     @PostMapping(value = "/chat/stream", produces = "text/event-stream")
-    public Flux<String> streamChat(@RequestBody RequestDTO request) {
+    public Flux<ServerSentEvent<String>> streamChat(@RequestBody RequestDTO request) {
         String userId = request.getUserId();
         String message = request.getMessage();
         Integer sessionId = request.getSessionId();

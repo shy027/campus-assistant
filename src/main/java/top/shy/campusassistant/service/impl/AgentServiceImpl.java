@@ -100,23 +100,24 @@ public class AgentServiceImpl implements AgentService {
     }
 
     @Override
-    public reactor.core.publisher.Flux<String> streamChat(Integer userId, String message, Integer sessionId) {
+    public reactor.core.publisher.Flux<org.springframework.http.codec.ServerSentEvent<String>> streamChat(Integer userId, String message, Integer sessionId) {
         // 处理会话
         Integer finalSessionId;
         if (sessionId == null) {
             // 创建新会话
             Session session = sessionService.createSession(userId);
             finalSessionId = session.getId();
-            log.info("创建新会话,会话ID:{},用户ID:{}", finalSessionId, userId);
+            log.info("【流式】创建新会话,会话ID:{},用户ID:{}", finalSessionId, userId);
         } else {
             // 更新现有会话的更新时间
             sessionService.updateSessionTime(sessionId);
             finalSessionId = sessionId;
-            log.info("使用现有会话,会话ID:{}", finalSessionId);
+            log.info("【流式】使用现有会话,会话ID:{}", finalSessionId);
         }
 
         // 记录用户消息
         messageService.createMessage(finalSessionId, userId, "user", message, MODEL_NAME);
+        log.info("【流式】已记录用户消息,会话ID:{}", finalSessionId);
 
         // 为每个用户生成或获取 threadId
         String threadId = userThreadMap.computeIfAbsent(String.valueOf(userId), k -> UUID.randomUUID().toString());
@@ -130,7 +131,7 @@ public class AgentServiceImpl implements AgentService {
 
         // 路由到合适的Agent
         BaseAgent agent = agentRouter.route(message);
-        log.info("用户 {} 的消息被流式路由到: {}", userId, agent.getAgentName());
+        log.info("【流式】用户 {} 的消息被路由到: {}", userId, agent.getAgentName());
 
         // 检查Agent是否支持流式调用
         if (agent instanceof top.shy.campusassistant.agent.ScholarshipBailianAgent) {
@@ -141,12 +142,26 @@ public class AgentServiceImpl implements AgentService {
             StringBuilder fullResponse = new StringBuilder();
             
             return bailianAgent.streamHandle(message, config)
-                .doOnNext(fullResponse::append)
+                .doOnNext(content -> {
+                    log.debug("【流式】ScholarshipAgent输出片段: {}", content);
+                })
+                .map(content -> org.springframework.http.codec.ServerSentEvent.<String>builder()
+                    .data(content)
+                    .build())
+                .doOnNext(sse -> {
+                    if (sse.data() != null) {
+                        fullResponse.append(sse.data());
+                        log.debug("【流式】发送SSE数据: {}", sse.data());
+                    }
+                })
                 .doOnComplete(() -> {
                     // 流式完成后记录完整的AI消息
                     String aiAnswer = fullResponse.toString();
                     messageService.createMessage(finalSessionId, userId, "ai", aiAnswer, MODEL_NAME);
-                    log.info("流式响应完成,已记录消息");
+                    log.info("【流式】ScholarshipAgent响应完成,已记录消息,总长度:{}", aiAnswer.length());
+                })
+                .doOnError(error -> {
+                    log.error("【流式】ScholarshipAgent处理失败", error);
                 });
         } else if (agent instanceof top.shy.campusassistant.agent.CourseBailianAgent) {
             top.shy.campusassistant.agent.CourseBailianAgent bailianAgent = 
@@ -156,23 +171,42 @@ public class AgentServiceImpl implements AgentService {
             StringBuilder fullResponse = new StringBuilder();
             
             return bailianAgent.streamHandle(message, config)
-                .doOnNext(fullResponse::append)
+                .doOnNext(content -> {
+                    log.debug("【流式】CourseAgent输出片段: {}", content);
+                })
+                .map(content -> org.springframework.http.codec.ServerSentEvent.<String>builder()
+                    .data(content)
+                    .build())
+                .doOnNext(sse -> {
+                    if (sse.data() != null) {
+                        fullResponse.append(sse.data());
+                        log.debug("【流式】发送SSE数据: {}", sse.data());
+                    }
+                })
                 .doOnComplete(() -> {
                     // 流式完成后记录完整的AI消息
                     String aiAnswer = fullResponse.toString();
                     messageService.createMessage(finalSessionId, userId, "ai", aiAnswer, MODEL_NAME);
-                    log.info("流式响应完成,已记录消息");
+                    log.info("【流式】CourseAgent响应完成,已记录消息,总长度:{}", aiAnswer.length());
+                })
+                .doOnError(error -> {
+                    log.error("【流式】CourseAgent处理失败", error);
                 });
         } else {
             // 其他Agent不支持流式,使用非流式方法并转换为Flux
+            log.info("【流式】Agent {} 不支持流式,使用非流式模式", agent.getAgentName());
             AssistantMessage response = agent.handle(message, config);
             String aiAnswer = response.getText();
             
             // 记录AI消息
             messageService.createMessage(finalSessionId, userId, "ai", aiAnswer, MODEL_NAME);
-            
-            // 将完整响应作为单个元素返回
-            return reactor.core.publisher.Flux.just(aiAnswer);
+            log.info("【流式】非流式Agent响应完成,已记录消息");
+
+            return reactor.core.publisher.Flux.just(
+                org.springframework.http.codec.ServerSentEvent.<String>builder()
+                    .data(aiAnswer)
+                    .build()
+            );
         }
     }
 }

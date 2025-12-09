@@ -1,5 +1,6 @@
 package top.shy.campusassistant.service;
 
+import org.springframework.http.codec.ServerSentEvent;
 import reactor.core.publisher.Flux;
 import top.shy.campusassistant.model.AssistantResponse;
 
@@ -28,7 +29,7 @@ public interface AgentService {
      * @param sessionId 会话ID(可选)
      * @return 流式AI响应
      */
-    Flux<String> streamChat(Integer userId, String message, Integer sessionId);
+    Flux<ServerSentEvent<String>> streamChat(Integer userId, String message, Integer sessionId);
 
     /**
      * 获取用户的历史记录
