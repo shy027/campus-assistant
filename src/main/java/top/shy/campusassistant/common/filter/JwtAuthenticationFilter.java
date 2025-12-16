@@ -74,6 +74,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     /**
+     * 对异步和错误分发同样执行过滤，避免流式 SSE 异步阶段丢失认证
+     */
+    @Override
+    protected boolean shouldNotFilterAsyncDispatch() {
+        return false;
+    }
+
+    @Override
+    protected boolean shouldNotFilterErrorDispatch() {
+        return false;
+    }
+
+    /**
      * 从请求头获取 Token
      */
     private String getTokenFromRequest(HttpServletRequest request) {

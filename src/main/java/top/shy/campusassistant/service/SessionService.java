@@ -21,6 +21,15 @@ public interface SessionService {
     Session createSession(Integer userId);
 
     /**
+     * 创建会话并指定模型/智能体名称
+     *
+     * @param userId    用户ID
+     * @param modelName 使用的模型或智能体
+     * @return 会话信息
+     */
+    Session createSession(Integer userId, String modelName);
+
+    /**
      * 根据用户ID查询会话列表
      *
      * @param userId 用户ID

@@ -8,6 +8,8 @@ import top.shy.campusassistant.agent.CampusInfoAgent;
 import top.shy.campusassistant.agent.CourseBailianAgent;
 import top.shy.campusassistant.agent.LibraryAgent;
 import top.shy.campusassistant.agent.ScholarshipBailianAgent;
+import top.shy.campusassistant.agent.ThesisBailianAgent;
+import top.shy.campusassistant.agent.TravelBailianAgent;
 import top.shy.campusassistant.agent.WeatherAgent;
 
 import java.util.Arrays;
@@ -26,6 +28,8 @@ public class AgentRouter {
 
     private final ScholarshipBailianAgent scholarshipBailianAgent;
     private final CourseBailianAgent courseBailianAgent;
+    private final TravelBailianAgent travelBailianAgent;
+    private final ThesisBailianAgent thesisBailianAgent;
     private final WeatherAgent weatherAgent;
     private final LibraryAgent libraryAgent;
     private final CampusInfoAgent campusInfoAgent;
@@ -41,6 +45,8 @@ public class AgentRouter {
         List<BaseAgent> agents = Arrays.asList(
                 scholarshipBailianAgent,
                 courseBailianAgent,
+                travelBailianAgent,
+                thesisBailianAgent,
                 weatherAgent,
                 libraryAgent,
                 campusInfoAgent  // 默认Agent,放在最后
@@ -48,12 +54,12 @@ public class AgentRouter {
 
         for (BaseAgent agent : agents) {
             if (agent.canHandle(message)) {
-                log.info("路由消息到: {} - 消息: {}", agent.getAgentName(), message);
+                log.info("路由消息到 {} - 消息: {}", agent.getAgentName(), message);
                 return agent;
             }
         }
 
-        // 如果没有匹配到,默认使用CampusInfoAgent
+        // 如果没有匹配到默认使用CampusInfoAgent
         log.info("使用默认Agent: {} - 消息: {}", campusInfoAgent.getAgentName(), message);
         return campusInfoAgent;
     }
@@ -64,6 +70,14 @@ public class AgentRouter {
      * @return Agent列表
      */
     public List<BaseAgent> getAllAgents() {
-        return Arrays.asList(scholarshipBailianAgent, courseBailianAgent, weatherAgent, libraryAgent, campusInfoAgent);
+        return Arrays.asList(
+                scholarshipBailianAgent,
+                courseBailianAgent,
+                travelBailianAgent,
+                thesisBailianAgent,
+                weatherAgent,
+                libraryAgent,
+                campusInfoAgent
+        );
     }
 }

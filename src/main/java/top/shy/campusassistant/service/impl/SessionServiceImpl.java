@@ -29,16 +29,21 @@ public class SessionServiceImpl implements SessionService {
 
     @Override
     public Session createSession(Integer userId) {
+        return createSession(userId, DEFAULT_MODEL);
+    }
+
+    @Override
+    public Session createSession(Integer userId, String modelName) {
         Session session = new Session();
         session.setTitle(DEFAULT_TITLE);
         session.setUserId(userId);
-        session.setModelName(DEFAULT_MODEL);
+        session.setModelName((modelName == null || modelName.isEmpty()) ? DEFAULT_MODEL : modelName);
         session.setCreateTime(LocalDateTime.now());
         session.setUpdateTime(LocalDateTime.now());
         session.setDeleted(0);
 
         sessionMapper.insert(session);
-        log.info("创建会话成功，会话ID：{}，用户ID：{}", session.getId(), userId);
+        log.info("创建会话成功，会话ID：{}，用户ID：{}，模型：{}", session.getId(), userId, session.getModelName());
         return session;
     }
 

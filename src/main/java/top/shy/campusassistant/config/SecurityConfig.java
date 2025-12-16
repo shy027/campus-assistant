@@ -91,8 +91,10 @@ public class SecurityConfig {
                         .requestMatchers("/actuator/**").permitAll()
                         // 放行 Druid 监控
                         .requestMatchers("/druid/**").permitAll()
-                        // 放行流式接口(支持异步调度)
-                        .requestMatchers("/api/v2/chat/stream").permitAll()
+                        // 流式接口需登录访问，覆盖 AI 相关路径
+                        .requestMatchers("/api/v2/chat/stream").authenticated()
+                        .requestMatchers("/api/agent/**").authenticated()
+                        .requestMatchers("/ai/bailian/**").authenticated()
                         // 其他请求需要认证（包括登出和用户信息修改）
                         .anyRequest().authenticated()
                 )
